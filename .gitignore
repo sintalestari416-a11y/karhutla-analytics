@@ -3,6 +3,5 @@ __pycache__/
 .venv/
 venv/
 .env
-app_backup*.py
 .streamlit/secrets.toml
-KACC-DataMining - Copy/
+app_backup*.py
