@@ -141,11 +141,13 @@ def run_kmeans(df, k=3):
     raw_clusters = km.fit_predict(X_scaled)
     df_res['Zona_Risiko'] = raw_clusters
 
-    cluster_means = df_res.groupby('Zona_Risiko')['Emisi_CO2_2025'].mean().sort_values()
+    df_res['_score'] = X_scaled.mean(axis=1)
+    cluster_means = df_res.groupby('Zona_Risiko')['_score'].mean().sort_values()
     labels = CLUSTER_LABEL_MAP.get(k, [f"Klaster_{i+1}" for i in range(k)])
     mapping_labels = {cid: label for cid, label in zip(cluster_means.index, labels)}
 
     df_res['Status_Kerawanan'] = df_res['Zona_Risiko'].map(mapping_labels)
+    df_res.drop(columns=['_score'], inplace=True)
     return df_res
 
 
