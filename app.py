@@ -932,145 +932,148 @@ with tab_peta:
         df_map['lat'] = df_map['Provinsi'].map(lambda p: PROV_COORDS[p][0])
         df_map['lon'] = df_map['Provinsi'].map(lambda p: PROV_COORDS[p][1])
 
-        # 7. Sinkronisasi baris info di atas peta
-        n_plotted = len(df_map)
-        hint_filter = " Ubah Filter Zona Risiko di sidebar untuk melihat semua provinsi." if n_plotted < 38 else ""
-        st.markdown(
-            f'<div style="font-family: \'Inter\', sans-serif; font-size: 0.82rem; color: #9A8B84; margin-bottom: 2px;">'
-            f'Menampilkan {n_plotted} dari 38 provinsi.{hint_filter}'
-            f'</div>',
-            unsafe_allow_html=True
-        )
-        st.markdown(
-            f'<div style="font-family: \'Inter\', sans-serif; font-size: 0.78rem; color: #9A8B84; margin-bottom: 12px;">'
-            f'Ukuran titik sebanding dengan akar kuadrat dari {selected_metric_label}; titik terkecil berarti nilai 0.'
-            f'</div>',
-            unsafe_allow_html=True
-        )
-
-        # 2. Hitung ukuran titik: size = 10 + sqrt(max(val, 0)) / max_sqrt * 26
-        raw_vals = np.maximum(df_map[selected_metric_col].fillna(0).values, 0)
-        sqrt_vals = np.sqrt(raw_vals)
-        max_sqrt = sqrt_vals.max() if len(sqrt_vals) > 0 and sqrt_vals.max() > 0 else 1.0
-        df_map['Ukuran_Titik'] = 10.0 + (sqrt_vals / max_sqrt) * 26.0
-
-        # 5. Label nama provinsi: hanya untuk Top 5 provinsi dengan nilai indikator terpilih > 0
-        df_gt_zero = df_map[df_map[selected_metric_col] > 0]
-        if not df_gt_zero.empty:
-            top5_provs = set(
-                df_gt_zero.sort_values(
-                    by=[selected_metric_col, 'Provinsi'],
-                    ascending=[False, True]
-                ).head(5)['Provinsi'].tolist()
-            )
+        if df_map.empty:
+            st.info("Tidak ada koordinat peta yang valid untuk ditampilkan pada filter ini.")
         else:
-            top5_provs = set()
+            # 7. Sinkronisasi baris info di atas peta
+            n_plotted = len(df_map)
+            hint_filter = " Ubah Filter Zona Risiko di sidebar untuk melihat semua provinsi." if n_plotted < 38 else ""
+            st.markdown(
+                f'<div style="font-family: \'Inter\', sans-serif; font-size: 0.82rem; color: #9A8B84; margin-bottom: 2px;">'
+                f'Menampilkan {n_plotted} dari 38 provinsi.{hint_filter}'
+                f'</div>',
+                unsafe_allow_html=True
+            )
+            st.markdown(
+                f'<div style="font-family: \'Inter\', sans-serif; font-size: 0.78rem; color: #9A8B84; margin-bottom: 12px;">'
+                f'Ukuran titik sebanding dengan akar kuadrat dari {selected_metric_label}; titik terkecil berarti nilai 0.'
+                f'</div>',
+                unsafe_allow_html=True
+            )
 
-        df_map['Label_Peta'] = df_map['Provinsi'].apply(lambda p: p if p in top5_provs else '')
+            # 2. Hitung ukuran titik: size = 10 + sqrt(max(val, 0)) / max_sqrt * 26
+            raw_vals = np.maximum(df_map[selected_metric_col].fillna(0).values, 0)
+            sqrt_vals = np.sqrt(raw_vals)
+            max_sqrt = sqrt_vals.max() if len(sqrt_vals) > 0 and sqrt_vals.max() > 0 else 1.0
+            df_map['Ukuran_Titik'] = 10.0 + (sqrt_vals / max_sqrt) * 26.0
 
-        # 3 & 4. Format hovertext seragam untuk semua titik
-        def build_hover(row):
-            prov = row['Provinsi']
-            zona = row['Status_Kerawanan']
-            luas = row['Luas_Karhutla_2025']
-            emisi = row['Emisi_CO2_2025']
-            hotspot = row['Total_Hotspot_2025']
-            intensitas = row['Intensitas_Emisi']
-            metric_val = row[selected_metric_col]
-
-            if pd.isna(luas) or luas == 0:
-                intensitas_str = "0 ton/ha (tidak ada luasan terbakar)"
+            # 5. Label nama provinsi: hanya untuk Top 5 provinsi dengan nilai indikator terpilih > 0
+            df_gt_zero = df_map[df_map[selected_metric_col] > 0]
+            if not df_gt_zero.empty:
+                top5_provs = set(
+                    df_gt_zero.sort_values(
+                        by=[selected_metric_col, 'Provinsi'],
+                        ascending=[False, True]
+                    ).head(5)['Provinsi'].tolist()
+                )
             else:
-                intensitas_str = f"{format_id(intensitas, 2)} ton/ha"
+                top5_provs = set()
 
-            lines = [
-                f"<b>{prov}</b>",
-                f"Zona Risiko: {zona}",
-                f"Luas Karhutla: {format_id(luas, 2)} ha",
-                f"Emisi CO2: {format_id(emisi, 0)} ton CO2",
-                f"Total Hotspot: {format_id(hotspot, 0)} titik",
-                f"Intensitas Emisi: {intensitas_str}"
-            ]
-            if pd.isna(metric_val) or metric_val <= 0:
-                lines.append("Nilai 0 — kemungkinan tidak ada kejadian atau data belum tercatat")
+            df_map['Label_Peta'] = df_map['Provinsi'].apply(lambda p: p if p in top5_provs else '')
 
-            return "<br>".join(lines)
+            # 3 & 4. Format hovertext seragam untuk semua titik
+            def build_hover(row):
+                prov = row['Provinsi']
+                zona = row['Status_Kerawanan']
+                luas = row['Luas_Karhutla_2025']
+                emisi = row['Emisi_CO2_2025']
+                hotspot = row['Total_Hotspot_2025']
+                intensitas = row['Intensitas_Emisi']
+                metric_val = row[selected_metric_col]
 
-        df_map['Hover_Text'] = df_map.apply(build_hover, axis=1)
+                if pd.isna(luas) or luas == 0:
+                    intensitas_str = "0 ton/ha (tidak ada luasan terbakar)"
+                else:
+                    intensitas_str = f"{format_id(intensitas, 2)} ton/ha"
 
-        # 1. Gambar peta dengan go.Scattermap / go.Scattermapbox per Status_Kerawanan
-        scatter_go_cls = go.Scattermap if hasattr(go, 'Scattermap') else go.Scattermapbox
-        fig_map = go.Figure()
+                lines = [
+                    f"<b>{prov}</b>",
+                    f"Zona Risiko: {zona}",
+                    f"Luas Karhutla: {format_id(luas, 2)} ha",
+                    f"Emisi CO2: {format_id(emisi, 0)} ton CO2",
+                    f"Total Hotspot: {format_id(hotspot, 0)} titik",
+                    f"Intensitas Emisi: {intensitas_str}"
+                ]
+                if pd.isna(metric_val) or metric_val <= 0:
+                    lines.append("Nilai 0 — kemungkinan tidak ada kejadian atau data belum tercatat")
 
-        # Urutan zona yang rapi
-        zone_order_ref = ['Bahaya', 'Siaga', 'Waspada', 'Rendah', 'Aman']
-        present_zones = [z for z in zone_order_ref if z in df_f['Status_Kerawanan'].values]
-        for z in df_f['Status_Kerawanan'].unique():
-            if z not in present_zones:
-                present_zones.append(z)
+                return "<br>".join(lines)
 
-        for zone in present_zones:
-            # Hitung jumlah provinsi di df_f untuk zona ini
-            count_in_dff = int((df_f['Status_Kerawanan'] == zone).sum())
-            legend_title = f"{zone} ({count_in_dff})"
-            df_zone = df_map[df_map['Status_Kerawanan'] == zone]
-            color = ZONE_COLORS.get(zone, '#FF8A2B')
+            df_map['Hover_Text'] = df_map.apply(build_hover, axis=1)
 
-            fig_map.add_trace(scatter_go_cls(
-                lat=df_zone['lat'].tolist(),
-                lon=df_zone['lon'].tolist(),
-                mode='markers+text',
-                marker=dict(
-                    size=df_zone['Ukuran_Titik'].tolist(),
-                    sizemode='diameter',
-                    color=color,
-                    opacity=0.85
-                ),
-                text=df_zone['Label_Peta'].tolist(),
-                textposition='top right',
-                textfont=dict(
-                    size=11,
-                    color='#F4EDE8',
-                    family='Inter, sans-serif'
-                ),
-                hovertext=df_zone['Hover_Text'].tolist(),
-                hoverinfo='text',
-                name=legend_title
-            ))
+            # 1. Gambar peta dengan go.Scattermap / go.Scattermapbox per Status_Kerawanan
+            scatter_go_cls = go.Scattermap if hasattr(go, 'Scattermap') else go.Scattermapbox
+            fig_map = go.Figure()
 
-        # 8. Tata letak & styling peta
-        if hasattr(go, 'Scattermap'):
+            # Urutan zona yang rapi
+            zone_order_ref = ['Bahaya', 'Siaga', 'Waspada', 'Rendah', 'Aman']
+            present_zones = [z for z in zone_order_ref if z in df_f['Status_Kerawanan'].values]
+            for z in df_f['Status_Kerawanan'].unique():
+                if z not in present_zones:
+                    present_zones.append(z)
+
+            for zone in present_zones:
+                # Hitung jumlah provinsi di df_f untuk zona ini
+                count_in_dff = int((df_f['Status_Kerawanan'] == zone).sum())
+                legend_title = f"{zone} ({count_in_dff})"
+                df_zone = df_map[df_map['Status_Kerawanan'] == zone]
+                color = ZONE_COLORS.get(zone, '#FF8A2B')
+
+                fig_map.add_trace(scatter_go_cls(
+                    lat=df_zone['lat'].tolist(),
+                    lon=df_zone['lon'].tolist(),
+                    mode='markers+text',
+                    marker=dict(
+                        size=df_zone['Ukuran_Titik'].tolist(),
+                        sizemode='diameter',
+                        color=color,
+                        opacity=0.85
+                    ),
+                    text=df_zone['Label_Peta'].tolist(),
+                    textposition='top right',
+                    textfont=dict(
+                        size=11,
+                        color='#F4EDE8',
+                        family='Inter, sans-serif'
+                    ),
+                    hovertext=df_zone['Hover_Text'].tolist(),
+                    hoverinfo='text',
+                    name=legend_title
+                ))
+
+            # 8. Tata letak & styling peta
+            if hasattr(go, 'Scattermap'):
+                fig_map.update_layout(
+                    map=dict(
+                        style='carto-darkmatter',
+                        center=dict(lat=-2.2, lon=118.0),
+                        zoom=3.5
+                    ),
+                    height=560,
+                    margin=dict(l=0, r=0, t=10, b=10)
+                )
+            else:
+                fig_map.update_layout(
+                    mapbox=dict(
+                        style='carto-darkmatter',
+                        center=dict(lat=-2.2, lon=118.0),
+                        zoom=3.5
+                    ),
+                    height=560,
+                    margin=dict(l=0, r=0, t=10, b=10)
+                )
+
+            fig_map = style_plotly(fig_map)
             fig_map.update_layout(
-                map=dict(
-                    style='carto-darkmatter',
-                    center=dict(lat=-2.2, lon=118.0),
-                    zoom=3.5
+                legend=dict(
+                    bgcolor="rgba(20, 13, 11, 0.65)",
+                    bordercolor="rgba(255, 255, 255, 0.08)",
+                    borderwidth=1,
+                    font=dict(color="#F4EDE8", family="Inter, sans-serif", size=11)
                 ),
-                height=560,
                 margin=dict(l=0, r=0, t=10, b=10)
             )
-        else:
-            fig_map.update_layout(
-                mapbox=dict(
-                    style='carto-darkmatter',
-                    center=dict(lat=-2.2, lon=118.0),
-                    zoom=3.5
-                ),
-                height=560,
-                margin=dict(l=0, r=0, t=10, b=10)
-            )
-
-        fig_map = style_plotly(fig_map)
-        fig_map.update_layout(
-            legend=dict(
-                bgcolor="rgba(20, 13, 11, 0.65)",
-                bordercolor="rgba(255, 255, 255, 0.08)",
-                borderwidth=1,
-                font=dict(color="#F4EDE8", family="Inter, sans-serif", size=11)
-            ),
-            margin=dict(l=0, r=0, t=10, b=10)
-        )
-        st.plotly_chart(fig_map, use_container_width=True)
+            st.plotly_chart(fig_map, use_container_width=True)
 
 
 # ------------------------------------------------------------------------------
