@@ -20,6 +20,10 @@ st.set_page_config(
 # ==============================================================================
 # 2. KONSTANTA GLOBAL & TOKEN WARNA GLASSMORPHISM
 # ==============================================================================
+SUMBER_DATA_NAMA = "SiPongi+ (Sistem Pemantauan Karhutla), Kementerian Kehutanan RI"
+SUMBER_DATA_URL = "https://sipongi.gakkum.kehutanan.go.id/"
+TANGGAL_AKSES = None   # diisi manual oleh saya, contoh: "16 Oktober 2026"
+
 FEATURE_COLS = ['Luas_Karhutla_2025', 'Emisi_CO2_2025', 'Total_Hotspot_2025']
 
 ZONE_COLORS = {
@@ -751,7 +755,7 @@ st.markdown("""
 # ==============================================================================
 # 9. HERO SECTION
 # ==============================================================================
-st.markdown("""
+st.markdown(f"""
 <div class="hero-wrapper">
     <div class="hero-title-row">
         <h1 class="hero-title">Situasi Karhutla Nasional</h1>
@@ -759,6 +763,9 @@ st.markdown("""
     </div>
     <div class="hero-subtitle">
         Sistem Pemantauan Terpadu, Analisis Jejak Karbon & Klasterisasi Risiko Kebakaran Hutan dan Lahan di 38 Provinsi Indonesia
+    </div>
+    <div style="font-family: 'Inter', sans-serif; font-size: 0.82rem; color: #9A8B84; margin-top: -6px; margin-bottom: 14px;">
+        Sumber data: <a href="{SUMBER_DATA_URL}" target="_blank" rel="noopener noreferrer" style="color: #FF8A2B; text-decoration: none;">{SUMBER_DATA_NAMA}</a>
     </div>
     <div class="hero-divider"></div>
 </div>
@@ -1404,6 +1411,7 @@ with tab_data:
     if df_f.empty:
         st.warning("Tidak ada data provinsi yang sesuai dengan filter yang dipilih.")
     else:
+        st.caption(f"Sumber data: [{SUMBER_DATA_NAMA}]({SUMBER_DATA_URL}) • Tahun Data: 2025")
         df_tabel = df_f[[
             'Provinsi', 'Status_Kerawanan', 'Luas_Karhutla_2025',
             'Emisi_CO2_2025', 'Total_Hotspot_2025', 'Intensitas_Emisi'
@@ -1429,7 +1437,27 @@ with tab_data:
             st.download_button(
                 label="Unduh Data CSV",
                 data=csv_data,
-                file_name="analisis_karhutla_2025.csv",
+                file_name="analisis_karhutla_2025_sumber_sipongi.csv",
                 mime="text/csv",
                 use_container_width=True
             )
+
+
+# ==============================================================================
+# 13. FOOTER: SUMBER DATA & CATATAN
+# ==============================================================================
+akses_baris = f"• <b style='color: #F4EDE8;'>Diakses pada:</b> {TANGGAL_AKSES}<br>" if TANGGAL_AKSES else ""
+
+footer_html = f"""
+<div class="glass-card" style="margin-top: 36px; margin-bottom: 24px;">
+    <div style="font-family: 'Manrope', sans-serif; font-size: 0.85rem; font-weight: 700; color: #FF8A2B; margin-bottom: 10px; letter-spacing: 0.6px; text-transform: uppercase;">
+        Sumber Data & Catatan
+    </div>
+    <div style="font-family: 'Inter', sans-serif; font-size: 0.84rem; color: #9A8B84; line-height: 1.65;">
+        • <b style="color: #F4EDE8;">Sumber:</b> <a href="{SUMBER_DATA_URL}" target="_blank" rel="noopener noreferrer" style="color: #FF8A2B; text-decoration: none;">{SUMBER_DATA_NAMA}</a><br>
+        • <b style="color: #F4EDE8;">Tahun data:</b> 2025<br>
+        {akses_baris}• <b style="color: #F4EDE8;">Catatan:</b> Hotspot adalah indikasi titik panas hasil deteksi satelit dan tidak selalu berarti terjadi kebakaran hutan dan lahan. Klasterisasi zona risiko dalam dashboard ini bersifat relatif antarprovinsi dan dihitung dari data yang tersedia.
+    </div>
+</div>
+"""
+st.markdown(footer_html, unsafe_allow_html=True)

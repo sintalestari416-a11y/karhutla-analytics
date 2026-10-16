@@ -26,6 +26,13 @@ Total_Hotspot_2025	Jumlah titik panas	titik
 
 Dataset berisi 38 provinsi dan satu baris Total. Baris Total dipisahkan dari data provinsi dan tidak ikut dalam klasterisasi, grafik, maupun tabel.
 
+Sumber Data
+
+- Nama sumber: SiPongi+ (Sistem Pemantauan Karhutla), Kementerian Kehutanan Republik Indonesia
+- URL: https://sipongi.gakkum.kehutanan.go.id/
+- Tahun data: 2025
+- Catatan: Hotspot adalah indikasi titik panas hasil deteksi satelit dan tidak selalu berarti terjadi kebakaran hutan dan lahan. Klasterisasi zona risiko dalam dashboard ini bersifat relatif antarprovinsi dan dihitung dari data yang tersedia.
+
 Metodologi
 Pembersihan: baris Total dipisahkan dari data provinsi.
 Fitur turunan: Intensitas_Emisi = Emisi_CO2 / Luas_Karhutla (ton per hektar). Bernilai 0 bila luas terbakar 0.
