@@ -22,7 +22,7 @@ st.set_page_config(
 # ==============================================================================
 SUMBER_DATA_NAMA = "SiPongi+ (Sistem Pemantauan Karhutla), Kementerian Kehutanan RI"
 SUMBER_DATA_URL = "https://sipongi.gakkum.kehutanan.go.id/"
-TANGGAL_AKSES = None   # diisi manual oleh saya, contoh: "16 Oktober 2026"
+TANGGAL_AKSES = "16 Oktober 2026"
 
 FEATURE_COLS = ['Luas_Karhutla_2025', 'Emisi_CO2_2025', 'Total_Hotspot_2025']
 
